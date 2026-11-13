@@ -1,7 +1,7 @@
-# Environment secrets — never commit these
-.env
-*.env
-**/.env
+# Environment secrets and example files
+.env*
+*.env*
+**/.env*
 
 # Python
 venv/

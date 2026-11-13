@@ -1,5 +1,7 @@
-# Environment secrets — never commit these
-.env
+# Environment secrets and example files
+.env*
+*.env*
+**/.env*
 
 # Python
 venv/
@@ -13,4 +15,3 @@ dist/
 # IDE
 .vscode/
 .idea/
-
