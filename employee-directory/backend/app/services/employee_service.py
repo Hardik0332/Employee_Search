@@ -13,9 +13,9 @@ from app.schemas.employee import EmployeeListResponse, EmployeeOut
 
 logger = logging.getLogger(__name__)
 
-# Hard upper bound — even if someone bypasses the router,
-# we never let a single request pull more than 100 rows
-MAX_PAGE_SIZE = 100
+# Hard upper bound — allows loading up to 1,000 employees for "All" view
+# while still protecting the database from unbounded massive queries
+MAX_PAGE_SIZE = 1000
 
 
 class EmployeeService:
@@ -27,6 +27,7 @@ class EmployeeService:
         term: str | None,
         page: int,
         page_size: int,
+        order: str = "asc",
     ) -> EmployeeListResponse:
         # ── Business validation ──────────────────────────────
         if term is not None:
@@ -41,12 +42,15 @@ class EmployeeService:
                 raise InvalidSearchQueryError(
                     "Search term must be at least 2 characters"
                 )
-            # max_length is already enforced by the router's Query(),
-            # but we cap here too as defense-in-depth
             if len(term) > 50:
                 raise InvalidSearchQueryError(
                     "Search term cannot exceed 50 characters"
                 )
+
+        # Normalize sort order: default to "asc" if invalid
+        order = order.lower().strip() if order else "asc"
+        if order not in {"asc", "desc"}:
+            order = "asc"
 
         # ── Normalize pagination (defense-in-depth) ──────────
         page_size = max(1, min(page_size, MAX_PAGE_SIZE))
@@ -59,17 +63,17 @@ class EmployeeService:
         fetch_limit = page_size + 1
 
         if term:
-            rows = await self._repo.search(term, fetch_limit, offset)
+            rows = await self._repo.search(term, fetch_limit, offset, order)
         else:
-            rows = await self._repo.list_all(fetch_limit, offset)
+            rows = await self._repo.list_all(fetch_limit, offset, order)
 
         has_more = len(rows) > page_size
         # Trim the extra probe row before responding
         items = rows[:page_size]
 
         logger.info(
-            "Search term=%r page=%d size=%d results=%d has_more=%s",
-            term, page, page_size, len(items), has_more,
+            "Search term=%r page=%d size=%d order=%s results=%d has_more=%s",
+            term, page, page_size, order, len(items), has_more,
         )
 
         return EmployeeListResponse(

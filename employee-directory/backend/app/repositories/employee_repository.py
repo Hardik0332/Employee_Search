@@ -17,7 +17,7 @@ class EmployeeRepository:
 
     # ── Search by name or department prefix ──────────────────
     async def search(
-        self, term: str, limit: int, offset: int
+        self, term: str, limit: int, offset: int, order: str = "asc"
     ) -> list[Employee]:
         """
         Prefix search using LIKE 'term%'.
@@ -25,6 +25,7 @@ class EmployeeRepository:
         We escape % and _ in the user's input so they're treated
         as literal characters, not wildcards.  The ESCAPE clause
         tells MySQL which character is the escape marker.
+        Supports A-Z ('asc') and Z-A ('desc') ordering on name.
         """
         # Escape special LIKE characters in user input
         safe = (
@@ -35,6 +36,12 @@ class EmployeeRepository:
         )
         pattern = f"{safe}%"         # prefix match → index-friendly
 
+        # Choose sort direction (uses the idx_employees_name index)
+        if order == "desc":
+            order_criteria = (Employee.name.desc(), Employee.id.desc())
+        else:
+            order_criteria = (Employee.name.asc(), Employee.id.asc())
+
         stmt = (
             select(Employee)
             .where(
@@ -43,9 +50,7 @@ class EmployeeRepository:
                     Employee.department.like(pattern, escape="\\"),
                 )
             )
-            # name + id gives stable, deterministic ordering
-            # even when many rows share the same name
-            .order_by(Employee.name, Employee.id)
+            .order_by(*order_criteria)
             .offset(offset)
             .limit(limit)
         )
@@ -55,12 +60,20 @@ class EmployeeRepository:
 
     # ── List all (no filter) ─────────────────────────────────
     async def list_all(
-        self, limit: int, offset: int
+        self, limit: int, offset: int, order: str = "asc"
     ) -> list[Employee]:
-        """Return a paginated slice of all employees."""
+        """
+        Return a paginated slice of all employees.
+        Supports A-Z ('asc') and Z-A ('desc') ordering on name.
+        """
+        if order == "desc":
+            order_criteria = (Employee.name.desc(), Employee.id.desc())
+        else:
+            order_criteria = (Employee.name.asc(), Employee.id.asc())
+
         stmt = (
             select(Employee)
-            .order_by(Employee.name, Employee.id)
+            .order_by(*order_criteria)
             .offset(offset)
             .limit(limit)
         )

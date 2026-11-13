@@ -14,7 +14,8 @@ import { apiClient } from "./apiClient";
  * @param {Object}      opts
  * @param {string}      [opts.search]   - prefix search term
  * @param {number}      [opts.page]     - 1-based page number
- * @param {number}      [opts.pageSize] - rows per page (max 100)
+ * @param {number}      [opts.pageSize] - rows per page (max 1000)
+ * @param {string}      [opts.order]    - 'asc' (A-Z) or 'desc' (Z-A)
  * @param {AbortSignal} [opts.signal]   - cancel token
  * @returns {Promise<{ items, page, page_size, has_more }>}
  */
@@ -22,6 +23,7 @@ export async function searchEmployees({
   search = "",
   page = 1,
   pageSize = 20,
+  order = "asc",
   signal,
 } = {}) {
   const params = new URLSearchParams();
@@ -31,7 +33,7 @@ export async function searchEmployees({
   if (search) params.set("search", search);
   params.set("page", String(page));
   params.set("page_size", String(pageSize));
+  params.set("order", order);
 
   return apiClient(`/employees?${params}`, { signal });
 }
-

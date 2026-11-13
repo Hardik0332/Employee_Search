@@ -5,7 +5,7 @@
  */
 
 import { useState } from "react";
-import { Loader2, Users } from "lucide-react";
+import { Loader2, Users, ArrowDownAZ, ArrowUpZA } from "lucide-react";
 import { useDebounce } from "./hooks/useDebounce";
 import { useEmployees } from "./hooks/useEmployees";
 import { SearchBar } from "./components/SearchBar";
@@ -16,9 +16,12 @@ import { ErrorState } from "./components/ErrorState";
 
 function App() {
   const [search, setSearch] = useState("");
+  const [order, setOrder] = useState("asc"); // "asc" (A-Z) | "desc" (Z-A)
+  const [pageSize, setPageSize] = useState(20); // 20 (default), 50, 100, 1000 (All)
+
   const debouncedSearch = useDebounce(search, 400);
   const { employees, status, error, hasMore, loadMore, retry } =
-    useEmployees(debouncedSearch);
+    useEmployees(debouncedSearch, order, pageSize);
 
   const trimmedSearch = debouncedSearch?.trim() || "";
 
@@ -62,21 +65,77 @@ function App() {
           />
         </div>
 
-        {/* Result count — announced to screen readers */}
-        {status === "success" && (
-          <p
-            className="mt-5 text-sm text-gray-500 dark:text-gray-400"
-            aria-live="polite"
-          >
-            Showing{" "}
-            <span className="font-medium text-gray-700 dark:text-gray-300">
-              {employees.length}
-            </span>{" "}
-            employee{employees.length !== 1 ? "s" : ""}
-            {trimmedSearch ? ` matching "${trimmedSearch}"` : ""}
-            {hasMore ? " — more available below" : ""}
-          </p>
-        )}
+        {/* ── Filter & Sort Bar ────────────────────────────── */}
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {/* Result count */}
+          <div>
+            {status === "success" && (
+              <p
+                className="text-sm text-gray-500 dark:text-gray-400"
+                aria-live="polite"
+              >
+                Showing{" "}
+                <span className="font-medium text-gray-700 dark:text-gray-300">
+                  {employees.length}
+                </span>{" "}
+                employee{employees.length !== 1 ? "s" : ""}
+                {trimmedSearch ? ` matching "${trimmedSearch}"` : ""}
+                {hasMore ? " — more available below" : ""}
+              </p>
+            )}
+          </div>
+
+          {/* Controls: A-Z / Z-A and Show Count */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Sort toggle (A to Z vs Z to A) */}
+            <div className="flex items-center rounded-lg border border-gray-200 bg-white p-1 text-xs shadow-sm dark:border-gray-800 dark:bg-gray-900">
+              <button
+                type="button"
+                onClick={() => setOrder("asc")}
+                className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 font-medium transition-colors ${
+                  order === "asc"
+                    ? "bg-indigo-600 text-white shadow-xs"
+                    : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                }`}
+                title="Sort Name A to Z"
+              >
+                <ArrowDownAZ className="h-3.5 w-3.5" />
+                A → Z
+              </button>
+              <button
+                type="button"
+                onClick={() => setOrder("desc")}
+                className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 font-medium transition-colors ${
+                  order === "desc"
+                    ? "bg-indigo-600 text-white shadow-xs"
+                    : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                }`}
+                title="Sort Name Z to A"
+              >
+                <ArrowUpZA className="h-3.5 w-3.5" />
+                Z → A
+              </button>
+            </div>
+
+            {/* How many to show dropdown */}
+            <div className="flex items-center">
+              <label htmlFor="page-size-select" className="sr-only">
+                Show how many employees
+              </label>
+              <select
+                id="page-size-select"
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm transition-colors focus:border-indigo-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300"
+              >
+                <option value={20}>Show 20</option>
+                <option value={50}>Show 50</option>
+                <option value={100}>Show 100</option>
+                <option value={1000}>Show All</option>
+              </select>
+            </div>
+          </div>
+        </div>
 
         {/* ── Status-driven content ──────────────────────── */}
         {isFirstLoad && <LoadingSkeleton />}

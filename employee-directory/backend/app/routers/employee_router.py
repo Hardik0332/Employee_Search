@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/employees", tags=["Employees"])
 
 # Only these query params are accepted — anything else is a typo
-_ALLOWED_PARAMS = {"search", "page", "page_size"}
+_ALLOWED_PARAMS = {"search", "page", "page_size", "order"}
 
 
 # ── Dependency chain ─────────────────────────────────────────
@@ -33,7 +33,7 @@ def _get_service(
     return EmployeeService(EmployeeRepository(db))
 
 
-# ── GET  /employees?search=&page=&page_size= ────────────────
+# ── GET  /employees?search=&page=&page_size=&order= ─────────
 @router.get(
     "",
     response_model=EmployeeListResponse,
@@ -49,7 +49,12 @@ async def search_employees(
     ),
     page: int = Query(default=1, ge=1, description="Page number (1-based)"),
     page_size: int = Query(
-        default=20, ge=1, le=100, description="Rows per page (max 100)"
+        default=20, ge=1, le=1000, description="Rows per page (default 20, max 1000)"
+    ),
+    order: str = Query(
+        default="asc",
+        pattern="^(asc|desc)$",
+        description="Sort order on name: 'asc' (A to Z) or 'desc' (Z to A)",
     ),
     service: EmployeeService = Depends(_get_service),
 ) -> EmployeeListResponse:
@@ -61,7 +66,7 @@ async def search_employees(
             f"Allowed: {', '.join(sorted(_ALLOWED_PARAMS))}"
         )
 
-    return await service.search_employees(search, page, page_size)
+    return await service.search_employees(search, page, page_size, order)
 
 
 # ── Future endpoints ─────────────────────────────────────────
