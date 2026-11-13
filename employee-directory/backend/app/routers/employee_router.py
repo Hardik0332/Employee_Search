@@ -49,7 +49,7 @@ async def search_employees(
     ),
     page: int = Query(default=1, ge=1, description="Page number (1-based)"),
     page_size: int = Query(
-        default=20, ge=1, le=1000, description="Rows per page (default 20, max 1000)"
+        default=20, ge=1, le=100000, description="Rows per page (default 20, max 100000)"
     ),
     order: str = Query(
         default="asc",

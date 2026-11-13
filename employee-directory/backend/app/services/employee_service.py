@@ -13,9 +13,8 @@ from app.schemas.employee import EmployeeListResponse, EmployeeOut
 
 logger = logging.getLogger(__name__)
 
-# Hard upper bound — allows loading up to 1,000 employees for "All" view
-# while still protecting the database from unbounded massive queries
-MAX_PAGE_SIZE = 1000
+# Hard upper bound — allows loading up to 100,000 employees for full "Show All" view
+MAX_PAGE_SIZE = 100000
 
 
 class EmployeeService:

@@ -131,7 +131,7 @@ function App() {
                 <option value={20}>Show 20</option>
                 <option value={50}>Show 50</option>
                 <option value={100}>Show 100</option>
-                <option value={1000}>Show All</option>
+                <option value={100000}>Show All</option>
               </select>
             </div>
           </div>
